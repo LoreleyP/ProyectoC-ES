@@ -23,7 +23,7 @@ Antes de comenzar, asegúrate de tener instalados los siguientes programas y her
 El proyecto está organizado de la siguiente manera:
 
 - `frontend/` - Contiene el código del frontend basado en React.
-- `inversiones/` - Contiene el código del backend basado en FastAPI.
+- `backend/` - Contiene el código del backend basado en FastAPI.
 
 ---
 
