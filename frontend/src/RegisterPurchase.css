@@ -1,0 +1,80 @@
+.register-purchase-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #f4f4f8;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.register-purchase-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+label {
+    font-weight: bold;
+    color: #555;
+}
+
+input,
+select {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+input:focus,
+select:focus {
+    border-color: #008cba;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 140, 186, 0.5);
+}
+
+/* Estilo personalizado para el calendario */
+.custom-calendar {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.custom-calendar .react-calendar__tile--active {
+    background-color: #008cba !important;
+    color: white !important;
+}
+
+.register-button {
+    grid-column: span 2;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #008cba;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.register-button:hover {
+    background-color: #005f87;
+}
