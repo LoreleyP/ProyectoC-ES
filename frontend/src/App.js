@@ -4,30 +4,43 @@ import RegisterPurchase from './RegisterPurchase';
 import ProfitLossAnalysis from './ProfitLossAnalysis';
 
 const App = () => {
-    const [symbol, setSymbol] = useState("AAPL");
-    const [view, setView] = useState('chart'); // Estado para determinar qué vista mostrar
+    const [view, setView] = useState('history'); // Estado para determinar qué vista mostrar
 
     return (
-        <div>
-            <h1>Stock Dashboard</h1>
-            <input
-                type="text"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                placeholder="Enter stock symbol"
-            />
-
-            {/* Botones para alternar entre vistas */}
-            <div>
-                <button onClick={() => setView('chart')}>Show Stock Chart</button>
-                <button onClick={() => setView('history')}>Register Purchase</button>
-                <button onClick={() => setView('analysis')}>Profit/Loss Analysis</button>
+        <div className="app-container">
+            {/* Menú lateral */}
+            <div className="sidebar">
+                <h2>GACT</h2>
+                <ul>
+                    <li 
+                        onClick={() => setView('history')} 
+                        className={view === 'history' ? 'active' : ''}
+                    >
+                        💰 Register
+                    </li>
+                    <li 
+                        onClick={() => setView('analysis')} 
+                        className={view === 'analysis' ? 'active' : ''}
+                    >
+                        📊 Investments
+                    </li>
+                </ul>
             </div>
 
-            {/* Renderizamos el componente correspondiente según el valor de `view` */}
-            {view === 'chart' && <StockChart symbol={symbol} />}
-            {view === 'history' && <RegisterPurchase symbol={symbol} />}
-            {view === 'analysis' && <ProfitLossAnalysis symbol={symbol} />}
+            {/* Contenido principal */}
+            <div className="main-content">
+                {/* Cambia el texto del encabezado dinámicamente según la vista seleccionada */}
+                <h1>
+                    {view === 'chart' && 'Stock Chart'}
+                    {view === 'history' && 'Register'}
+                    {view === 'analysis' && 'Investments'}
+                </h1>
+
+                {/* Renderizamos el componente correspondiente según el valor de `view` */}
+                {view === 'chart' && <StockChart />}
+                {view === 'history' && <RegisterPurchase />}
+                {view === 'analysis' && <ProfitLossAnalysis />}
+            </div>
         </div>
     );
 };

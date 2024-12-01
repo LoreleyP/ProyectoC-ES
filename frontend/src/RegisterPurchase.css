@@ -1,24 +1,108 @@
-.register-purchase-container {
-    max-width: 800px;
-    margin: 50px auto;
+/* Contenedor principal */
+.app-container {
+    display: flex;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+  }
+  
+  .sidebar {
+    background-color: #f8f9fa; /* Color de fondo */
     padding: 20px;
-    background-color: #f4f4f8;
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 200px;
     font-family: Arial, sans-serif;
 }
 
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #6c757d; /* Color de texto desactivado */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sidebar li .icon {
+    margin-right: 10px;
+}
+
+.sidebar li.active {
+    background-color: #ccc; /* Fondo del elemento activo */
+    color: black; /* Texto del elemento activo */
+}
+
+.sidebar li.active .icon {
+    color: white; /* Color del ícono del elemento activo */
+}
+
+.sidebar li:hover {
+    background-color: #e9ecef; /* Fondo al pasar el cursor */
+}
+
+  
+  /* Contenido principal */
+  .main-content {
+    flex: 1;
+    padding: 20px;
+    background-color: #d7d5d8;
+  }
+  
+  .main-content h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .main-content input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+  }
+  
+  .main-content input:focus {
+    border-color: #008cba;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 140, 186, 0.5);
+  }
+  
+
+
+
+
+.register-purchase-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 50px;
+    background-color:  #f4f4f8;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    
+}
+
 h2 {
-    text-align: center;
+    text-align: left;
     color: #333;
     margin-bottom: 20px;
 }
 
 .register-purchase-form {
     display: grid;
+    align-items: flex-start; /* Alinea todos los elementos al lado derecho */
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 10%;
+    width: 90%;
 }
+
 
 .form-group {
     display: flex;
@@ -58,7 +142,7 @@ select:focus {
 }
 
 .custom-calendar .react-calendar__tile--active {
-    background-color: #008cba !important;
+    background-color: #000000 !important;
     color: white !important;
 }
 
@@ -67,12 +151,14 @@ select:focus {
     padding: 10px 20px;
     font-size: 16px;
     color: #fff;
-    background-color: #008cba;
+    background-color: #000000;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     text-align: center;
     transition: background-color 0.3s;
+    width: 50%; /* Ajusta el ancho a la mitad */
+    margin: 0 auto; /* Centra el botón */
 }
 
 .register-button:hover {
