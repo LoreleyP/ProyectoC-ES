@@ -32,4 +32,4 @@ El proyecto está organizado de la siguiente manera:
 ### **3.1. Navegar al Directorio del Backend**
 Accede al directorio del backend desde la terminal:
 ```bash
-cd inversiones
+cd backend
