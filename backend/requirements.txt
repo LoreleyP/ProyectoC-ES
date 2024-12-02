@@ -4,4 +4,3 @@ requests
 sqlalchemy 
 psycopg2
 websockets
-"uvicorn[standard]"
