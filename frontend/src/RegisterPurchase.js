@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import './RegisterPurchase.css'; // Archivo CSS para personalización
+import './RegisterPurchase.css'; 
 
 const RegisterPurchase = () => {
     const [purchaseDate, setPurchaseDate] = useState(new Date());
@@ -59,7 +59,7 @@ const RegisterPurchase = () => {
             quantity: parseInt(sharesAmount, 10), // Convertir la cantidad a número entero
             currency: "USD",
             stock_date: new Date(purchaseDate).toISOString(), // Convertir a formato ISO
-            purchase_date: new Date().toISOString(), // Fecha actual en ISO
+            purchase_date: new Date(purchaseDate).toISOString(), // Fecha actual en ISO
         };
 
         console.log("purchaseData:", purchaseData);

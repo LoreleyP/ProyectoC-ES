@@ -1,119 +1,107 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import './ProfitLossAnalysis.css';
 
-const ProfitLossAnalysis = ({ symbol }) => {
+const ProfitLossAnalysis = () => {
     const [purchases, setPurchases] = useState([]);
-    const [currentStockPrice, setCurrentStockPrice] = useState(null);
-    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const fetchData = async () => {
+    const loadStockPurchases = async () => {
         try {
-            // Obtener datos históricos de compras
-            const purchasesResponse = await fetch(`http://localhost:8000/${symbol}`);
-            if (!purchasesResponse.ok) {
-                throw new Error('Error fetching historical purchases data');
-            }
-            const purchasesData = await purchasesResponse.json();
-            setPurchases(purchasesData);
+            const response = await axios.get('http://localhost:8000/'); 
+            const purchases = response.data;
 
-            // Obtener datos de precio actual del stock
-            const stockResponse = await fetch(`http://localhost:8000/stock/${symbol}`);
-            if (!stockResponse.ok) {
-                throw new Error('Error fetching stock data');
-            }
-            const stockData = await stockResponse.json();
-            setCurrentStockPrice(stockData.results[0].c); // Campo "c" es el precio actual
+            const purchasesWithProfitLoss = await Promise.all(
+                purchases.map(async (purchase) => {
+                    const currentPrice = await getCurrentStockPrice(purchase.stock);
 
+                    if (currentPrice === null || isNaN(currentPrice)) {
+                        return { ...purchase, currentPrice: 'N/A', profitOrLoss: 'N/A', profitLossPercentage: 'N/A' };
+                    }
+
+                    const profitOrLoss = (currentPrice - purchase.price) * purchase.quantity;
+                    const profitLossPercentage = ((currentPrice - purchase.price) / purchase.price) * 100;
+
+                    const companyName = await getCompanyName(purchase.stock);
+                    return { ...purchase, currentPrice, profitOrLoss, profitLossPercentage, companyName };
+                })
+            );
+
+            setPurchases(purchasesWithProfitLoss);
             setLoading(false);
-            setError(null);
         } catch (err) {
-            setError(err.message);
+            console.error("Error fetching stock purchases", err);
+            setError("Error loading data");
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [symbol]);
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
-    const calculateProfitLoss = () => {
-        let totalProfitLoss = 0;
-
-        const analysis = purchases.map((purchase) => {
-            const profitLoss = (currentStockPrice - purchase.price) * purchase.quantity;
-            totalProfitLoss += profitLoss;
-
-            return {
-                id: purchase.id,
-                stockDate: new Date(purchase.stock_date).toLocaleDateString(),
-                purchasePrice: purchase.price,
-                currentStockPrice: currentStockPrice,
-                quantity: purchase.quantity,
-                profitLoss: profitLoss,
-            };
-        });
-
-        return { analysis, totalProfitLoss };
+    const getCurrentStockPrice = async (symbol) => {
+        try {
+            const response = await axios.get(`http://localhost:8000/stock/${symbol}`);
+            return response.data.results[0].c;
+        } catch (err) {
+            console.error(`Error fetching current price for stock ${symbol}:`, err);
+            return null;
+        }
     };
 
-    const { analysis, totalProfitLoss } = calculateProfitLoss();
+    const getCompanyName = async (symbol) => {
+        const companyNames = {
+            AAPL: 'Apple',
+            GOOG: 'Google',
+            AMZN: 'Amazon',
+            MSFT: 'Microsoft',
+        };
+        return companyNames[symbol] || symbol;
+    };
+
+    useEffect(() => {
+        loadStockPurchases(); 
+    }, []);
+
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
 
     return (
-        <div>
-            <h2>{symbol} Profit/Loss Analysis</h2>
-            <table border="1" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
+        <div className="table-container">
+            <h2>Stock Purchases</h2> 
+            <table className="stock-table">
                 <thead>
                     <tr>
-                        <th>Stock Date</th>
+                        <th>Transaction ID</th> 
+                        <th>Company</th>
+                        <th>Purchase Date</th>
+                        <th>Quantity</th>
                         <th>Purchase Price</th>
                         <th>Current Price</th>
-                        <th>Quantity</th>
                         <th>Profit/Loss</th>
+                        <th>Profit/Loss (%)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {analysis.map((item) => (
-                        <tr key={item.id}>
-                            <td>{item.stockDate}</td>
-                            <td>${item.purchasePrice.toFixed(2)}</td>
-                            <td>${item.currentStockPrice.toFixed(2)}</td>
-                            <td>{item.quantity}</td>
-                            <td
-                                style={{
-                                    color: item.profitLoss >= 0 ? 'green' : 'red',
-                                }}
-                            >
-                                ${item.profitLoss.toFixed(2)}
+                    {purchases.map((purchase) => (
+                        <tr key={purchase.id}>
+                            <td>{purchase.id}</td> 
+                            <td>{purchase.companyName}</td>
+                            <td>{new Date(purchase.purchase_date).toLocaleDateString()}</td>
+                            <td>{purchase.quantity}</td>
+                            <td>${purchase.price.toFixed(2)}</td>
+                            <td>{purchase.currentPrice !== 'N/A' ? `$${purchase.currentPrice.toFixed(2)}` : 'N/A'}</td>
+                            <td style={{ color: purchase.profitOrLoss >= 0 ? 'green' : 'red' }}>
+                                {purchase.profitOrLoss !== 'N/A' ? `$${purchase.profitOrLoss.toFixed(2)}` : 'N/A'}
+                            </td>
+                            <td style={{ color: purchase.profitLossPercentage >= 0 ? 'green' : 'red' }}>
+                                {purchase.profitLossPercentage !== 'N/A' ? `${purchase.profitLossPercentage.toFixed(2)}%` : 'N/A'}
                             </td>
                         </tr>
                     ))}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colSpan="4" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                            Total Profit/Loss:
-                        </td>
-                        <td
-                            style={{
-                                fontWeight: 'bold',
-                                color: totalProfitLoss >= 0 ? 'green' : 'red',
-                            }}
-                        >
-                            ${totalProfitLoss.toFixed(2)}
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
     );
 };
 
 export default ProfitLossAnalysis;
+

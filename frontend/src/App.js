@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import StockChart from './StockChart';
 import RegisterPurchase from './RegisterPurchase';
-import ProfitLossAnalysis from './ProfitLossAnalysis';
+import ProfitLossAnalysis from './ProfitLossAnalysis';  // Componente para mostrar todas las compras
 
 const App = () => {
-    const [view, setView] = useState('chart'); 
-    const [symbol, setSymbol] = useState("AMZN");
+    const [view, setView] = useState('chart'); // Estado para cambiar vistas
+    const [symbol, setSymbol] = useState("AMZN"); // Estado para el símbolo de acciones (solo si es necesario)
 
     return (
         <div className="app-container">
             {/* Menú lateral */}
             <div className="sidebar">
                 <h2>GACT</h2>
-                <ul>                    
+                <ul>
                     <li 
                         onClick={() => setView('history')} 
                         className={view === 'history' ? 'active' : ''}
@@ -30,26 +30,18 @@ const App = () => {
 
             {/* Contenido principal */}
             <div className="main-content">
-                {/* Renderiza la barra de entrada solo en la vista "Investments" */}
-                {view === 'analysis' && (
-                    <input
-                        type="text"
-                        value={symbol}
-                        onChange={(e) => setSymbol(e.target.value)}
-                        placeholder="Enter stock symbol"
-                    />
-                )}
-                
                 <h1>
                     {view === 'chart' && 'Stock Chart'}
                     {view === 'history' && 'Register'}
                     {view === 'analysis' && 'Investments'}
                 </h1>
 
-                {/* Renderizamos el componente correspondiente según el valor de view */}
+                {/* Renderizar componentes basados en la vista seleccionada */}
                 {view === 'chart' && <StockChart />}
                 {view === 'history' && <RegisterPurchase />}
-                {view === 'analysis' && <ProfitLossAnalysis symbol={symbol} />}
+                
+                {/* Para mostrar todas las compras de acciones */}
+                {view === 'analysis' && <ProfitLossAnalysis />}
             </div>
         </div>
     );
