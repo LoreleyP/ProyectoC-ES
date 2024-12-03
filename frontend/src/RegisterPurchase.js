@@ -78,13 +78,22 @@ const RegisterPurchase = () => {
             const result = await response.json();
             console.log("Compra exitosa:", result);
 
-            setSharesAmount('');
-            setPurchaseValue('');
-            setPurchaseDate(new Date());
+            setSharesAmount(''); // Limpiar cantidad de acciones
+            setPurchaseValue(''); // Limpiar valor de compra
+            setPurchaseDate(new Date()); // Restablecer fecha
             alert('¡Compra registrada con éxito!');
         } catch (error) {
             console.error("Error al confirmar la compra:", error.message);
             alert("Hubo un error al confirmar la compra. Por favor, inténtalo de nuevo.");
+        }
+    };
+
+    // Función para asegurarse de que el valor ingresado sea solo números enteros positivos
+    const handleSharesAmountChange = (e) => {
+        const value = e.target.value;
+        // Solo actualizar si el valor es un número entero positivo
+        if (/^\d+$/.test(value) || value === "") {
+            setSharesAmount(value);
         }
     };
 
@@ -116,6 +125,7 @@ const RegisterPurchase = () => {
                         <option value="AMZN">Amazon</option>
                         <option value="MSFT">Microsoft</option>
                     </select>
+
                     <label htmlFor="purchase-value">Purchase value</label>
                     <input
                         type="number"
@@ -125,13 +135,15 @@ const RegisterPurchase = () => {
                         placeholder="$xxxxxx"
                         style={{ backgroundColor: '#f5f5f5' }}
                     />
+
                     <label htmlFor="shares-amount">Amount of Shares</label>
                     <input
                         type="number"
                         id="shares-amount"
                         value={sharesAmount}
-                        onChange={(e) => setSharesAmount(e.target.value)}
+                        onChange={handleSharesAmountChange}
                         placeholder="xx"
+                        min="1" // Asegurarse que el valor no sea menor que 1
                         required
                     />
                     
@@ -145,3 +157,4 @@ const RegisterPurchase = () => {
 };
 
 export default RegisterPurchase;
+

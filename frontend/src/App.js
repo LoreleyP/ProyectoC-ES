@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import StockChart from './StockChart';
 import RegisterPurchase from './RegisterPurchase';
 import ProfitLossAnalysis from './ProfitLossAnalysis';  // Componente para mostrar todas las compras
 
 const App = () => {
-    const [view, setView] = useState('chart'); // Estado para cambiar vistas
-    const [symbol, setSymbol] = useState("AMZN"); // Estado para el símbolo de acciones (solo si es necesario)
-
+    const [view, setView] = useState('history'); // Estado para cambiar vistas
+    
     return (
         <div className="app-container">
             {/* Menú lateral */}
@@ -30,16 +28,13 @@ const App = () => {
 
             {/* Contenido principal */}
             <div className="main-content">
-                <h1>
-                    {view === 'chart' && 'Stock Chart'}
+                <h1>                    
                     {view === 'history' && 'Register'}
                     {view === 'analysis' && 'Investments'}
                 </h1>
 
                 {/* Renderizar componentes basados en la vista seleccionada */}
-                {view === 'chart' && <StockChart />}
-                {view === 'history' && <RegisterPurchase />}
-                
+                {view === 'history' && <RegisterPurchase />}                
                 {/* Para mostrar todas las compras de acciones */}
                 {view === 'analysis' && <ProfitLossAnalysis />}
             </div>

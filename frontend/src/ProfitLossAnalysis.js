@@ -6,28 +6,48 @@ const ProfitLossAnalysis = () => {
     const [purchases, setPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [stockCache, setStockCache] = useState({
+        prices: {},
+        companyNames: {}
+    });
 
     const loadStockPurchases = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/'); 
+            // Realizamos la petición para obtener las compras de acciones
+            const response = await axios.get('http://localhost:8000/');
             const purchases = response.data;
 
-            const purchasesWithProfitLoss = await Promise.all(
-                purchases.map(async (purchase) => {
-                    const currentPrice = await getCurrentStockPrice(purchase.stock);
+            // Obtenemos los símbolos de las acciones para realizar las consultas
+            const stockSymbols = purchases.map(purchase => purchase.stock);
 
-                    if (currentPrice === null || isNaN(currentPrice)) {
-                        return { ...purchase, currentPrice: 'N/A', profitOrLoss: 'N/A', profitLossPercentage: 'N/A' };
-                    }
+            // Consultamos los precios y nombres solo si no están en el caché
+            const currentPrices = await getCurrentStockPrices(stockSymbols);
+            const companyNames = await getCompanyNames(stockSymbols);
 
-                    const profitOrLoss = (currentPrice - purchase.price) * purchase.quantity;
-                    const profitLossPercentage = ((currentPrice - purchase.price) / purchase.price) * 100;
+            // Actualizamos el caché solo con los valores nuevos
+            setStockCache(prevCache => ({
+                prices: { ...prevCache.prices, ...currentPrices },
+                companyNames: { ...prevCache.companyNames, ...companyNames }
+            }));
 
-                    const companyName = await getCompanyName(purchase.stock);
-                    return { ...purchase, currentPrice, profitOrLoss, profitLossPercentage, companyName };
-                })
-            );
+            // Calculamos el Profit/Loss para cada compra
+            const purchasesWithProfitLoss = purchases.map((purchase) => {
+                const currentPrice = stockCache.prices[purchase.stock] || currentPrices[purchase.stock];
+                const companyName = stockCache.companyNames[purchase.stock] || companyNames[purchase.stock];
 
+                // Si no tenemos el precio o el nombre de la compañía, los marcamos como 'N/A'
+                if (currentPrice === null || isNaN(currentPrice)) {
+                    return { ...purchase, currentPrice: 'N/A', profitOrLoss: 'N/A', profitLossPercentage: 'N/A' };
+                }
+
+                // Calculamos el Profit/Loss y el porcentaje de Profit/Loss
+                const profitOrLoss = (currentPrice - purchase.price) * purchase.quantity;
+                const profitLossPercentage = ((currentPrice - purchase.price) / purchase.price) * 100;
+
+                return { ...purchase, currentPrice, profitOrLoss, profitLossPercentage, companyName };
+            });
+
+            // Actualizamos el estado con las compras que tienen Profit/Loss calculado
             setPurchases(purchasesWithProfitLoss);
             setLoading(false);
         } catch (err) {
@@ -37,40 +57,83 @@ const ProfitLossAnalysis = () => {
         }
     };
 
-    const getCurrentStockPrice = async (symbol) => {
-        try {
-            const response = await axios.get(`http://localhost:8000/stock/${symbol}`);
-            return response.data.results[0].c;
-        } catch (err) {
-            console.error(`Error fetching current price for stock ${symbol}:`, err);
-            return null;
+    // Esta función obtiene los precios de las acciones en función del caché y la API de Finnhub
+    const getCurrentStockPrices = async (symbols) => {
+        const prices = {};
+        const symbolsToFetch = [];
+
+        // Verificamos si el precio de cada símbolo ya está en el caché, si no, lo marcamos para obtenerlo
+        for (const symbol of symbols) {
+            if (!stockCache.prices[symbol]) {
+                symbolsToFetch.push(symbol);
+            } else {
+                prices[symbol] = stockCache.prices[symbol];
+            }
         }
+
+        // Si hay símbolos para los que hacer peticiones a la API
+        if (symbolsToFetch.length > 0) {
+            try {
+                const priceResponses = await Promise.all(symbolsToFetch.map(symbol =>
+                    axios.get(`http://localhost:8000/stock/${symbol}`)
+                ));
+
+                priceResponses.forEach((response, index) => {
+                    const symbol = symbolsToFetch[index];
+                    prices[symbol] = response.data.c || null; // Cambié 'results[0]?.c' por 'data.c' según la estructura de la API Finnhub
+                });
+            } catch (err) {
+                console.error("Error fetching stock prices:", err);
+            }
+        }
+
+        return prices;
     };
 
-    const getCompanyName = async (symbol) => {
-        const companyNames = {
-            AAPL: 'Apple',
-            GOOG: 'Google',
-            AMZN: 'Amazon',
-            MSFT: 'Microsoft',
-        };
-        return companyNames[symbol] || symbol;
+    // Esta función obtiene los nombres de las compañías en función del caché y valores fijos
+    const getCompanyNames = (symbols) => {
+        const names = {};
+        const symbolsToFetch = [];
+
+        // Verificamos si el nombre de la compañía ya está en el caché, si no, lo marcamos para obtenerlo
+        for (const symbol of symbols) {
+            if (!stockCache.companyNames[symbol]) {
+                symbolsToFetch.push(symbol);
+            } else {
+                names[symbol] = stockCache.companyNames[symbol];
+            }
+        }
+
+        // Si hay símbolos para los que hacer peticiones
+        symbolsToFetch.forEach(symbol => {
+            // Se asignan valores fijos en caso de que no haya datos
+            const companyNames = {
+                AAPL: 'Apple',
+                GOOG: 'Google',
+                AMZN: 'Amazon',
+                MSFT: 'Microsoft',
+            };
+
+            names[symbol] = companyNames[symbol] || symbol;
+        });
+
+        return names;
     };
 
     useEffect(() => {
-        loadStockPurchases(); 
-    }, []);
+        loadStockPurchases(); // Llamada a la función para cargar las compras y obtener la data
+    }, []); // El array vacío asegura que solo se ejecute una vez al montar el componente
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
 
     return (
         <div className="table-container">
-            <h2>Stock Purchases</h2> 
+            <h2>Stock Purchases</h2>
             <table className="stock-table">
                 <thead>
                     <tr>
-                        <th>Transaction ID</th> 
+                        <th>Transaction ID</th>
                         <th>Company</th>
                         <th>Purchase Date</th>
                         <th>Quantity</th>
@@ -83,7 +146,7 @@ const ProfitLossAnalysis = () => {
                 <tbody>
                     {purchases.map((purchase) => (
                         <tr key={purchase.id}>
-                            <td>{purchase.id}</td> 
+                            <td>{purchase.id}</td>
                             <td>{purchase.companyName}</td>
                             <td>{new Date(purchase.purchase_date).toLocaleDateString()}</td>
                             <td>{purchase.quantity}</td>
@@ -104,4 +167,3 @@ const ProfitLossAnalysis = () => {
 };
 
 export default ProfitLossAnalysis;
-
