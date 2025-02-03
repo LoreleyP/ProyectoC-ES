@@ -218,7 +218,7 @@ const ProfitLossAnalysis = () => {
             <table className="stock-table">
                 <thead>
                     <tr>
-                        <th>Acción</th>
+                        <th>CompanyName</th>
                         <th>Total Quantity</th>
                         <th>USD Value</th>
                         <th>Cost Price</th>
@@ -245,7 +245,7 @@ const ProfitLossAnalysis = () => {
             </table>
 
             <div className="chart-container">
-                <h3>Ganancias/Pérdidas a través del tiempo</h3>
+                <h3>Profit/Loss over time</h3>
                 <Bar data={chartData} options={{ responsive: true }} />
             </div>
         </div>
