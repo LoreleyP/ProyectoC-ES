@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './ProfitLossAnalysis.css';
+import './SummaryAnalysis.css';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
-const ProfitLossAnalysis = () => {
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const SummaryAnalysis = () => {
     const [purchases, setPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [stockCache, setStockCache] = useState({
         prices: {},
         companyNames: {}
+    });
+    const [chartData, setChartData] = useState({
+        labels: [],
+        datasets: [
+            {
+                label: 'Ganancias/Pérdidas',
+                data: [],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+            },
+        ],
     });
     const [sortType, setSortType] = useState('lexicographic'); // Estado para controlar el tipo de orden
 
@@ -18,7 +34,7 @@ const ProfitLossAnalysis = () => {
             const purchases = response.data;
             const stockSymbols = purchases.map(purchase => purchase.stock);
 
-            // Obtener los precios y los nombres de las acciones si no están en caché
+            // Consultamos los precios y nombres solo si no están en el caché
             const currentPrices = await getCurrentStockPrices(stockSymbols);
             const companyNames = await getCompanyNames(stockSymbols);
 
@@ -27,22 +43,64 @@ const ProfitLossAnalysis = () => {
                 companyNames: { ...prevCache.companyNames, ...companyNames }
             }));
 
-            const purchasesWithProfitLoss = purchases.map((purchase) => {
-                const currentPrice = stockCache.prices[purchase.stock] || currentPrices[purchase.stock];
-                const companyName = stockCache.companyNames[purchase.stock] || companyNames[purchase.stock];
-
-                if (currentPrice === null || isNaN(currentPrice)) {
-                    return { ...purchase, currentPrice: 'N/A', profitOrLoss: 'N/A', profitLossPercentage: 'N/A', companyName };
+            // Agrupar las compras por cada acción (empresa)
+            const groupedPurchases = purchases.reduce((acc, purchase) => {
+                if (!acc[purchase.stock]) {
+                    acc[purchase.stock] = {
+                        companyName: companyNames[purchase.stock],
+                        totalQuantity: 0,
+                        totalUSDValue: 0,
+                        costPrice: 0,
+                        currentPrice: currentPrices[purchase.stock] || 'N/A',
+                        profitOrLoss: 0,
+                        profitLossPercentage: 0
+                    };
                 }
 
-                const profitOrLoss = (currentPrice - purchase.price) * purchase.quantity;
-                const profitLossPercentage = ((currentPrice - purchase.price) / purchase.price) * 100;
+                acc[purchase.stock].totalQuantity += purchase.quantity;
+                acc[purchase.stock].totalUSDValue += purchase.quantity * purchase.price;
 
-                return { ...purchase, currentPrice, profitOrLoss, profitLossPercentage, companyName };
-            });
+                return acc;
+            }, {});
+
+            // Calculamos el precio de costo y Profit/Loss para cada acción
+            for (const stock in groupedPurchases) {
+                const stockData = groupedPurchases[stock];
+
+                stockData.costPrice = stockData.totalUSDValue / stockData.totalQuantity;
+
+                if (stockData.currentPrice !== 'N/A') {
+                    stockData.profitOrLoss = (stockData.currentPrice - stockData.costPrice) * stockData.totalQuantity;
+                    stockData.profitLossPercentage = ((stockData.currentPrice - stockData.costPrice) / stockData.costPrice) * 100;
+                }
+            }
+
+            // Convertimos el objeto a un array
+            const purchasesWithProfitLoss = Object.values(groupedPurchases);
+
+            // Ordenamos inicialmente por el nombre de la acción (lexicográficamente)
+            purchasesWithProfitLoss.sort((a, b) => a.companyName.localeCompare(b.companyName));
 
             setPurchases(purchasesWithProfitLoss);
             setLoading(false);
+
+            // Creamos los datos para el gráfico
+            const chartLabels = purchasesWithProfitLoss.map(purchase => purchase.companyName);
+            const chartValues = purchasesWithProfitLoss.map(purchase => purchase.profitOrLoss);
+
+            setChartData({
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Ganancias/Pérdidas',
+                        data: chartValues,
+                        backgroundColor: chartValues.map(value => value >= 0 ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)'),
+                        borderColor: chartValues.map(value => value >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
+                        borderWidth: 1,
+                    },
+                ],
+            });
+
         } catch (err) {
             console.error("Error fetching stock purchases", err);
             setError("Error loading data");
@@ -148,7 +206,7 @@ const ProfitLossAnalysis = () => {
 
     return (
         <div className="table-container">
-            <h2>Stock Purchases</h2>
+            <h2>Stock Purchases Summary</h2>
             <div>
                 <label htmlFor="sortType">Sort By: </label>
                 <select id="sortType" value={sortType} onChange={handleSortChange}>
@@ -160,37 +218,38 @@ const ProfitLossAnalysis = () => {
             <table className="stock-table">
                 <thead>
                     <tr>
-                        <th>Transaction ID</th>
                         <th>Company</th>
-                        <th>Purchase Date</th>
-                        <th>Quantity</th>
-                        <th>Purchase Price</th>
-                        <th>Current Price</th>
-                        <th>Profit/Loss</th>
+                        <th>Total Quantity</th>
+                        <th>USD Value</th>
+                        <th>Cost Price</th>
                         <th>Profit/Loss (%)</th>
+                        <th>Profit/Loss</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {purchases.map((purchase) => (
-                        <tr key={purchase.id}>
-                            <td>{purchase.id}</td>
-                            <td>{purchase.companyName}</td> {/* Show the company name */}
-                            <td>{new Date(purchase.purchase_date).toLocaleDateString()}</td>
-                            <td>{purchase.quantity}</td>
-                            <td>${purchase.price.toFixed(2)}</td>
-                            <td>{purchase.currentPrice !== 'N/A' ? `$${purchase.currentPrice.toFixed(2)}` : 'N/A'}</td>
-                            <td style={{ color: purchase.profitOrLoss >= 0 ? 'green' : 'red' }}>
-                                {purchase.profitOrLoss !== 'N/A' ? `$${purchase.profitOrLoss.toFixed(2)}` : 'N/A'}
-                            </td>
+                    {purchases.map((purchase, index) => (
+                        <tr key={index}>
+                            <td>{purchase.companyName}</td>
+                            <td>{purchase.totalQuantity}</td>
+                            <td>${purchase.totalUSDValue.toFixed(2)}</td>
+                            <td>${purchase.costPrice.toFixed(2)}</td>
                             <td style={{ color: purchase.profitLossPercentage >= 0 ? 'green' : 'red' }}>
-                                {purchase.profitLossPercentage !== 'N/A' ? `${purchase.profitLossPercentage.toFixed(2)}%` : 'N/A'}
+                                {purchase.profitLossPercentage.toFixed(2)}%
+                            </td>
+                            <td style={{ color: purchase.profitOrLoss >= 0 ? 'green' : 'red' }}>
+                                ${purchase.profitOrLoss.toFixed(2)}
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            <div className="chart-container">
+                <h3>Profit/Loss over time</h3>
+                <Bar data={chartData} options={{ responsive: true }} />
+            </div>
         </div>
     );
 };
 
-export default ProfitLossAnalysis;
+export default SummaryAnalysis;
